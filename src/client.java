@@ -146,7 +146,7 @@ public class client
 		{
 			try
 			{
-				doc.insertString(doc.getLength(), "Disconnected", null);
+				doc.insertString(doc.getLength(), "\nDisconnected", null);
 			}
 			catch (Exception e)
 			{
@@ -185,7 +185,7 @@ public class client
 							break;
 
 						case NORMAL_MESSAGE:
-							if (msg_received.substring(1, msg_received.indexOf("-")).equals(username))
+							if (!msg_received.substring(1, msg_received.indexOf("-")).equals(username))
 								try
 								{
 									doc.insertString(doc.getLength(), "\n" + msg_received.substring(1), null);
@@ -219,11 +219,10 @@ public class client
 
 							try
 							{
-								users_doc.insertString(0, "Users:\n", null);
+								user_list.setText("");
 								for (String user : users)
-								{
 									users_doc.insertString(doc.getLength(), "\n" + user, null);
-								}
+								users_doc.insertString(0, "Users:", null);
 							}
 							catch (Exception e)
 							{
@@ -271,13 +270,14 @@ public class client
 		message_text.setText("");
 		try
 		{
-			doc.insertString(doc.getLength(), msg + "\n", null);
+			doc.insertString(doc.getLength(), "\n" + msg, null);
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
 		if (msg.length() > 4 && msg.substring(0, 3).equals("pm/") && msg.substring(3).contains("/"))
+			//pm/recipient/message
 			sendPrivateMessage(msg);
 		else
 			sendNormalMessage(msg);
@@ -287,10 +287,8 @@ public class client
 	{
 		try
 		{
-			//todo show msg after writing it
 			DataOutputStream DOS = new DataOutputStream(socket.getOutputStream());
 			DOS.writeUTF(NORMAL_MESSAGE + username + "-" + msg);
-			doc.insertString(doc.getLength(), msg, null);
 		}
 		catch (Exception e)
 		{
@@ -300,13 +298,11 @@ public class client
 
 	private void sendPrivateMessage(String msg)
 	{
-		//todo fix this, also show msg after writing it
 		int secondSlash = msg.indexOf("/", 3);
 		try
 		{
 			DataOutputStream DOS = new DataOutputStream(socket.getOutputStream());
 			DOS.writeUTF(PRIVATE_MESSAGE + username + "-" + msg.substring(3, secondSlash) + "-" + msg.substring(secondSlash));
-			doc.insertString(doc.getLength(), msg, null);
 		}
 		catch (Exception e)
 		{
