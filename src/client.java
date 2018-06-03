@@ -36,7 +36,7 @@ public class client
 	private Document doc;
 	private Document users_doc;
 	private Socket socket;
-	private Boolean keepListing = true;
+	private Boolean keepListening = true;
 	private String username;
 
 	private client()
@@ -154,7 +154,7 @@ public class client
 			}
 			DataOutputStream DOS = new DataOutputStream(socket.getOutputStream());
 			DOS.writeUTF("3");
-			keepListing = false;
+			keepListening = false;
 			socket.close();
 		}
 		catch (Exception e)
@@ -169,7 +169,7 @@ public class client
 		{
 			@Override public void run()
 			{
-				while (keepListing)
+				while (keepListening)
 					try
 					{
 						String msg_received;
@@ -178,72 +178,78 @@ public class client
 						msg_received = DIS.readUTF();
 						switch (Character.getNumericValue(msg_received.charAt(0)))//todo use final
 						{
-							case CONNECT:
-								username = msg_received.substring(1);
-								send_button.setEnabled(true);
-								username_text.setText(username);
-								break;
+						case CONNECT:
+							username = msg_received.substring(1);
+							send_button.setEnabled(true);
+							username_text.setText(username);
+							break;
 
-							case NORMAL_MESSAGE:
-								if (msg_received.substring(1, msg_received.indexOf("-")) != username)
-									try
-									{
-										doc.insertString(doc.getLength(), msg_received.substring(1) + "\n", null);
-									}
-									catch (Exception e)
-									{
-										e.printStackTrace();
-									}
-								break;
-
-							case PRIVATE_MESSAGE:
+						case NORMAL_MESSAGE:
+							if (msg_received.substring(1, msg_received.indexOf("-")).equals(username))
 								try
 								{
-									doc.insertString(doc.getLength(), msg_received.substring(1) + "\n", null);
+									doc.insertString(doc.getLength(), "\n" + msg_received.substring(1), null);
 								}
 								catch (Exception e)
 								{
 									e.printStackTrace();
 								}
-								break;
+							break;
 
-							case DISCONNECT:
-								disconnect();
-								break;
+						case PRIVATE_MESSAGE:
+							try
+							{
+								doc.insertString(doc.getLength(), "\n" + msg_received.substring(1), null);
+							}
+							catch (Exception e)
+							{
+								e.printStackTrace();
+							}
+							break;
 
-							case STILL_ALIVE:
-								break;
+						case DISCONNECT:
+							disconnect();
+							break;
 
-							case USER_LIST:
-								String[] users = msg_received.substring(1).split("-");
+						case STILL_ALIVE:
+							break;
 
-								try
+						case USER_LIST:
+							String[] users = msg_received.substring(1).split("-");
+
+							try
+							{
+								users_doc.insertString(0, "Users:\n", null);
+								for (String user : users)
 								{
-									users_doc.remove(0, doc.getLength());
-									for (String user : users)
-									{
-										users_doc.insertString(doc.getLength(), user + "\n", null);
-									}
+									users_doc.insertString(doc.getLength(), "\n" + user, null);
 								}
-								catch (Exception e)
-								{
-									e.printStackTrace();
-								}
-								break;
+							}
+							catch (Exception e)
+							{
+								e.printStackTrace();
+							}
+							break;
 
-							case ERROR:
-								try
-								{//todo make this red
-									doc.insertString(doc.getLength(), msg_received.substring(1) + "\n", null);
-								}
-								catch (Exception e)
-								{
-									e.printStackTrace();
-								}
-								break;
+						case ERROR:
+							try
+							{
+								StyleContext context = new StyleContext();
+								// build a style
+								Style style = context.addStyle("test", null);
+								// set some style properties
+								StyleConstants.setForeground(style, Color.RED);
 
-							default:
-								System.err.println("Message not up to code");
+								doc.insertString(doc.getLength(), "\n" + msg_received.substring(1) + "\n", style);
+							}
+							catch (Exception e)
+							{
+								e.printStackTrace();
+							}
+							break;
+
+						default:
+							System.err.println("Message not up to code");
 						}
 
 						System.out.println(msg_received);
@@ -271,7 +277,7 @@ public class client
 		{
 			e.printStackTrace();
 		}
-		if (msg.substring(0, 3).equals("pm/") && msg.substring(3).contains("/"))
+		if (msg.length() > 4 && msg.substring(0, 3).equals("pm/") && msg.substring(3).contains("/"))
 			sendPrivateMessage(msg);
 		else
 			sendNormalMessage(msg);
@@ -284,6 +290,7 @@ public class client
 			//todo show msg after writing it
 			DataOutputStream DOS = new DataOutputStream(socket.getOutputStream());
 			DOS.writeUTF(NORMAL_MESSAGE + username + "-" + msg);
+			doc.insertString(doc.getLength(), msg, null);
 		}
 		catch (Exception e)
 		{
@@ -299,6 +306,7 @@ public class client
 		{
 			DataOutputStream DOS = new DataOutputStream(socket.getOutputStream());
 			DOS.writeUTF(PRIVATE_MESSAGE + username + "-" + msg.substring(3, secondSlash) + "-" + msg.substring(secondSlash));
+			doc.insertString(doc.getLength(), msg, null);
 		}
 		catch (Exception e)
 		{
